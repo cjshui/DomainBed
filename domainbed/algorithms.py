@@ -116,6 +116,109 @@ class ERM(Algorithm):
         return self.network(x)
 
 
+class PRM(Algorithm):
+    """
+    Prameter risk minimization
+
+    """
+
+    def __init__(self, input_shape, num_classes, num_domains, hparams):
+        super(PRM, self).__init__(input_shape, num_classes, num_domains,
+                                   hparams)
+        self.input_shape = input_shape
+        self.num_classes = num_classes
+        self.meta_weight = self.hparams['meta_weight']
+        self.inner_step = self.hparams['inner_step']
+
+        self.network = networks.PRM_model(input_shape, num_classes, hparams)
+        # self.optimizer = torch.optim.Adam(
+        #     self.network.parameters(),
+        #     lr=self.hparams["lr"],
+        #     weight_decay=self.hparams['weight_decay']
+        # )
+
+    # clone a task sepcific network (with initialization to current model)
+    def create_clone(self, device):
+        self.network_inner = networks.PRM_model(self.input_shape, self.num_classes, self.hparams,
+                                            weights=self.network.state_dict()).to(device)
+        self.optimizer_inner = torch.optim.Adam(
+            self.network_inner.parameters(),
+            lr=self.hparams["lr"],
+            weight_decay=self.hparams['weight_decay']
+        )
+        if self.optimizer_inner_state is not None:
+            self.optimizer_inner.load_state_dict(self.optimizer_inner_state)
+
+    # clone a task specific network (with out self function), for constructing multiple predictors
+    def create_A_Net(self, device, opt_state = None):
+        network_inner = networks.PRM_model(self.input_shape,self.num_classes,self.hparams,
+                                           weights=self.network.state_dict()).to(device)
+        optimizer_inner = torch.optim.Adam(
+            network_inner.prameters(),
+            lr=self.hparams["lr"],
+            weight_decay=self.hparams['weight_decay']
+        )
+
+        if opt_state is not None:
+            optimizer_inner.load_state_dict(opt_state)
+
+        return network_inner, optimizer_inner
+
+    # updating prior-gradient through the moving average lr_meta * new + (1-lr_meta) * prior
+    # will apply this function for both levels
+    def grad_update(self, new_weights, prior_weights, lr_meta):
+        new_weights = ParamDict(new_weights)
+        prior_weights = ParamDict(prior_weights)
+        prior_weights += lr_meta * (new_weights - prior_weights)
+        return prior_weights
+
+
+    # updating the task and prior weights
+    def update(self, minibatches, unlabeled=None):
+
+        for i, (x, y) in enumerate(minibatches):
+
+            # define a new model with meta-initialization (self. network_inner and optimizer_inner)
+            self.create_clone(minibatches[0][0].device)
+
+            # optimization for inner_task is 5
+            for inner_step in range(self.inner_step):
+
+                # computing the prediction loss
+                loss = F.cross_entropy(self.network_inner(x), y)
+                self.optimizer_inner.zero_grad()
+                loss.backward()
+                self.optimizer_inner.step()
+
+                # moving average for processing the inner-loss, note at this moments, the meta and inner loss are inverse
+                # the meta-weight should be small
+
+                inner_weights = self.grad_update(
+                    prior_weights=self.network_inner.state_dict(),
+                    new_weights = self.network.state_dict(),
+                    lr_meta= self.meta_weight
+                )
+
+                # reset network weights after update
+                self.network_inner.reset_weights(inner_weights)
+
+            # after inner_step (default=5) repeats, updating the meta-network through an online update
+            self.optimizer_inner_state = self.optimizer_inner.state_dict()
+
+            meta_weights = self.grad_update(
+                    prior_weights=self.network.state_dict(),
+                    new_weights=self.network_inner.state_dict(),
+                    lr_meta=self.hparams["meta_lr"]
+            )
+            self.network.reset_weights(meta_weights)
+
+        return {'loss': loss.item()}
+
+    def predict(self, x):
+        return self.network(x)
+
+
+
 class Fish(Algorithm):
     """
     Implementation of Fish, as seen in Gradient Matching for Domain 

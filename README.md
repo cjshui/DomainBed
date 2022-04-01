@@ -77,10 +77,10 @@ python3 -m domainbed.scripts.download \
 Train a model:
 
 ```sh
-python3 -m domainbed.scripts.train\
-       --data_dir=./domainbed/data/MNIST/\
-       --algorithm IGA\
-       --dataset ColoredMNIST\
+python -m domainbed.scripts.train\
+       --data_dir=./domainbed/data/\
+       --algorithm ERM\
+       --dataset WILDSCamelyon\
        --test_env 2
 ```
 

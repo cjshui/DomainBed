@@ -226,3 +226,29 @@ class WholeFish(nn.Module):
 
     def forward(self, x):
         return self.net(x)
+
+
+class PRM_model(nn.Module):
+
+    def __init__(self, input_shape, num_classes, hparams, weights=None):
+        super(PRM_model, self).__init__()
+        featurizer = Featurizer(input_shape, hparams)
+        classifier = Classifier(
+            featurizer.n_outputs,
+            num_classes,
+            hparams['nonlinear_classifier'])
+        self.net = nn.Sequential(
+            featurizer, classifier
+        )
+        # weight initialization
+        if weights is not None:
+            self.load_state_dict(copy.deepcopy(weights))
+
+    def reset_weights(self, weights):
+        self.load_state_dict(copy.deepcopy(weights))
+
+    def forward(self, x):
+        return self.net(x)
+
+
+

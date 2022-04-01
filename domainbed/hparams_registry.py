@@ -28,9 +28,9 @@ def _hparams(algorithm, dataset, random_seed):
     # Unconditional hparam definitions.
 
     _hparam('data_augmentation', True, lambda r: True)
-    _hparam('resnet18', False, lambda r: False)
+    _hparam('resnet18', True, lambda r: False)
     _hparam('resnet_dropout', 0., lambda r: r.choice([0., 0.1, 0.5]))
-    _hparam('class_balanced', False, lambda r: False)
+    _hparam('class_balanced', True, lambda r: False)
     # TODO: nonlinear classifiers disabled
     _hparam('nonlinear_classifier', False,
             lambda r: bool(r.choice([False, False])))
@@ -50,6 +50,12 @@ def _hparams(algorithm, dataset, random_seed):
 
     elif algorithm == 'Fish':
         _hparam('meta_lr', 0.5, lambda r:r.choice([0.05, 0.1, 0.5]))
+
+    elif algorithm =='PRM':
+        _hparam('meta_lr',0.5, lambda r:r.choice([0.05,0.1,0.5]))      # controlling the learning weights in the outer-loop
+        _hparam('meta_weights',0.1, lambda r:r.choice([0.05,0.1,0.2])) # controlling the regularized loss in the inner-loop
+        _hparam('inner_step',5, lambda r:r.choice([1,5,10]))
+
 
     elif algorithm == "RSC":
         _hparam('rsc_f_drop_factor', 1/3, lambda r: r.uniform(0, 0.5))
