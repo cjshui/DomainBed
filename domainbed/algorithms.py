@@ -131,6 +131,7 @@ class PRM(Algorithm):
         self.inner_step = self.hparams['inner_step']
 
         self.network = networks.PRM_model(input_shape, num_classes, hparams)
+        self.optimizer_inner_state = None
         # self.optimizer = torch.optim.Adam(
         #     self.network.parameters(),
         #     lr=self.hparams["lr"],
@@ -150,19 +151,19 @@ class PRM(Algorithm):
             self.optimizer_inner.load_state_dict(self.optimizer_inner_state)
 
     # clone a task specific network (with out self function), for constructing multiple predictors
-    def create_A_Net(self, device, opt_state = None):
-        network_inner = networks.PRM_model(self.input_shape,self.num_classes,self.hparams,
-                                           weights=self.network.state_dict()).to(device)
-        optimizer_inner = torch.optim.Adam(
-            network_inner.prameters(),
-            lr=self.hparams["lr"],
-            weight_decay=self.hparams['weight_decay']
-        )
-
-        if opt_state is not None:
-            optimizer_inner.load_state_dict(opt_state)
-
-        return network_inner, optimizer_inner
+    # def create_A_Net(self, device, opt_state = None):
+    #     network_inner = networks.PRM_model(self.input_shape,self.num_classes,self.hparams,
+    #                                        weights=self.network.state_dict()).to(device)
+    #     optimizer_inner = torch.optim.Adam(
+    #         network_inner.prameters(),
+    #         lr=self.hparams["lr"],
+    #         weight_decay=self.hparams['weight_decay']
+    #     )
+    #
+    #     if opt_state is not None:
+    #         optimizer_inner.load_state_dict(opt_state)
+    #
+    #     return network_inner, optimizer_inner
 
     # updating prior-gradient through the moving average lr_meta * new + (1-lr_meta) * prior
     # will apply this function for both levels

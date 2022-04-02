@@ -84,6 +84,13 @@ python -m domainbed.scripts.train\
        --test_env 2
 ```
 
+python -m domainbed.scripts.train\
+       --data_dir=./domainbed/data/\
+       --algorithm PRM\
+       --dataset ColoredMNIST\
+       --test_env 0
+
+
 Launch a sweep:
 
 ```sh

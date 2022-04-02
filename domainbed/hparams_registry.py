@@ -53,7 +53,7 @@ def _hparams(algorithm, dataset, random_seed):
 
     elif algorithm =='PRM':
         _hparam('meta_lr',0.5, lambda r:r.choice([0.05,0.1,0.5]))      # controlling the learning weights in the outer-loop
-        _hparam('meta_weights',0.1, lambda r:r.choice([0.05,0.1,0.2])) # controlling the regularized loss in the inner-loop
+        _hparam('meta_weight',0.1, lambda r:r.choice([0.05,0.1,0.2])) # controlling the regularized loss in the inner-loop
         _hparam('inner_step',5, lambda r:r.choice([1,5,10]))
 
 
